@@ -9,14 +9,15 @@ import type { ClientMessage, Participant, Message } from "@shared/schema";
 
 // WebSocket message types
 interface WSMessage {
-  type: 'join_room' | 'leave_room' | 'send_message' | 'typing_start' | 'typing_stop';
+  type: 'join_room' | 'leave_room' | 'send_message' | 'typing_start' | 'typing_stop' | 'message_read';
   roomId?: string;
   nickname?: string;
   message?: string;
+  messageId?: string;
 }
 
 interface WSResponse {
-  type: 'room_joined' | 'participant_update' | 'new_message' | 'typing_update' | 'room_destroyed' | 'error';
+  type: 'room_joined' | 'participant_update' | 'new_message' | 'typing_update' | 'room_destroyed' | 'message_read' | 'error';
   data?: any;
   error?: string;
 }

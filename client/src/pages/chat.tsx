@@ -161,13 +161,43 @@ export default function Chat() {
           const newMessage = {
             ...response.data,
             isOwn: response.data.senderId === currentUserId.current,
-            timestamp: new Date(response.data.timestamp)
+            timestamp: new Date(response.data.timestamp),
+            readBy: response.data.readBy || []
           };
           setMessages(prev => [...prev, newMessage]);
+          
+          // Auto-mark as read if not own message (simulate reading after 2 seconds)
+          if (!newMessage.isOwn) {
+            setTimeout(() => {
+              if (socket && safeSend) {
+                safeSend(JSON.stringify({
+                  type: 'message_read',
+                  messageId: newMessage.id
+                }));
+              }
+            }, 2000);
+          }
           
           // Play sound for received messages (not own messages)
           if (!newMessage.isOwn) {
             playReceiveSound();
+          }
+          break;
+
+        case 'message_read':
+          if (response.data) {
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === response.data.messageId) {
+                const readBy = (msg as any).readBy || [];
+                if (!readBy.includes(response.data.readerId)) {
+                  return {
+                    ...msg,
+                    readBy: [...readBy, response.data.readerId]
+                  };
+                }
+              }
+              return msg;
+            }));
           }
           break;
           
@@ -435,7 +465,11 @@ export default function Chat() {
                       <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
                         <p>{msg.content}</p>
                         <div className="flex items-center justify-end gap-1 mt-1">
-                          <span className="text-xs opacity-70">✓</span>
+                          {(msg as any).readBy && (msg as any).readBy.length > 0 ? (
+                            <span className="text-xs opacity-70" title={`Read by ${(msg as any).readBy.length} people`}>✓✓</span>
+                          ) : (
+                            <span className="text-xs opacity-70" title="Delivered">✓</span>
+                          )}
                         </div>
                       </div>
                     </div>
