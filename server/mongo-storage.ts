@@ -93,8 +93,8 @@ export class MongoStorage implements IStorage {
     return {
       id: savedRoom.id,
       createdAt: savedRoom.createdAt,
-      lastActivity: savedRoom.lastActivity,
-      participantCount: savedRoom.participantCount
+      lastActivityAt: savedRoom.lastActivity,
+      participantCount: savedRoom.participantCount.toString()
     };
   }
 
@@ -105,8 +105,8 @@ export class MongoStorage implements IStorage {
     return {
       id: room.id,
       createdAt: room.createdAt,
-      lastActivity: room.lastActivity,
-      participantCount: room.participantCount
+      lastActivityAt: room.lastActivity,
+      participantCount: room.participantCount.toString()
     };
   }
 
@@ -134,8 +134,8 @@ export class MongoStorage implements IStorage {
     return rooms.map(room => ({
       id: room.id,
       createdAt: room.createdAt,
-      lastActivity: room.lastActivity,
-      participantCount: room.participantCount
+      lastActivityAt: room.lastActivity,
+      participantCount: room.participantCount.toString()
     }));
   }
 
