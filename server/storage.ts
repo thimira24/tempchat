@@ -145,7 +145,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { MongoStorage } from './mongo-storage';
-
-// Export storage instance
-export const storage = MongoStorage.getInstance();
+// Export storage instance - using in-memory storage for disposable chat app
+export const storage = new MemStorage();

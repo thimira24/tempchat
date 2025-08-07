@@ -48,7 +48,7 @@ export default function Chat() {
   const currentUserId = useRef(Math.random().toString(36).substr(2, 9));
 
   // Socket connection
-  const { socket, isConnected } = useSocket();
+  const { socket, isConnected, safeSend } = useSocket();
 
   // Fetch room data
   const { data: roomData, isLoading } = useQuery({
@@ -104,7 +104,7 @@ export default function Chat() {
 
   // Socket event handlers
   useEffect(() => {
-    if (!socket || !roomId) return;
+    if (!socket || !roomId || !isConnected) return;
 
     const handleMessage = (data: any) => {
       const response = JSON.parse(data);
@@ -162,8 +162,8 @@ export default function Chat() {
 
     socket.addEventListener('message', handleMessage);
 
-    // Join room
-    socket.send(JSON.stringify({
+    // Join room when connected
+    safeSend(JSON.stringify({
       type: 'join_room',
       roomId,
       nickname
@@ -172,12 +172,12 @@ export default function Chat() {
     return () => {
       socket.removeEventListener('message', handleMessage);
       // Leave room
-      socket.send(JSON.stringify({
+      safeSend(JSON.stringify({
         type: 'leave_room',
         roomId
       }));
     };
-  }, [socket, roomId, nickname, toast, setLocation]);
+  }, [socket, roomId, nickname, isConnected, safeSend, toast, setLocation]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -193,9 +193,9 @@ export default function Chat() {
   }, [message]);
 
   const handleSendMessage = () => {
-    if (!socket || !message.trim()) return;
+    if (!isConnected || !message.trim()) return;
 
-    socket.send(JSON.stringify({
+    safeSend(JSON.stringify({
       type: 'send_message',
       message: message.trim()
     }));
@@ -206,16 +206,16 @@ export default function Chat() {
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    socket.send(JSON.stringify({
+    safeSend(JSON.stringify({
       type: 'typing_stop'
     }));
   };
 
   const handleTyping = () => {
-    if (!socket) return;
+    if (!isConnected) return;
 
     // Send typing start
-    socket.send(JSON.stringify({
+    safeSend(JSON.stringify({
       type: 'typing_start'
     }));
 
@@ -226,7 +226,7 @@ export default function Chat() {
 
     // Set timeout to stop typing indicator
     typingTimeoutRef.current = setTimeout(() => {
-      socket.send(JSON.stringify({
+      safeSend(JSON.stringify({
         type: 'typing_stop'
       }));
     }, 2000);
