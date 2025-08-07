@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { insertMessageSchema } from "@shared/schema";
-import type { ClientMessage, Participant } from "@shared/schema";
+import type { ClientMessage, Participant, Message } from "@shared/schema";
 
 // WebSocket message types
 interface WSMessage {
@@ -74,7 +74,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: room.createdAt,
           participantCount: participants.length
         },
-        messages: messages.map(msg => ({
+        messages: messages.map((msg: Message) => ({
           id: msg.id,
           content: msg.content,
           senderNickname: msg.senderNickname,

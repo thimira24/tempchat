@@ -79,7 +79,9 @@ export class MemStorage implements IStorage {
     const message: Message = {
       ...insertMessage,
       id: randomUUID(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      senderId: insertMessage.senderId || null,
+      senderNickname: insertMessage.senderNickname || null
     };
 
     const roomMessages = this.messages.get(insertMessage.roomId) || [];
@@ -143,5 +145,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Memory storage is available as fallback
-// export const storage = new MemStorage();
+// Export storage instance
+export const storage = new MemStorage();
