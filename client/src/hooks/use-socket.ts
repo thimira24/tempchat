@@ -6,29 +6,41 @@ export function useSocket() {
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    // In development, Vite dev server proxies to the Express server
+    // So we should connect to the same host that served the page
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
+    console.log('Attempting WebSocket connection to:', wsUrl);
+    console.log('Current location:', window.location.href);
+    
+    try {
+      const socket = new WebSocket(wsUrl);
+      socketRef.current = socket;
 
-    socket.onopen = () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-    };
+      socket.onopen = () => {
+        console.log('WebSocket connected successfully');
+        setIsConnected(true);
+      };
 
-    socket.onclose = () => {
-      console.log('WebSocket disconnected');
+      socket.onclose = (event) => {
+        console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
+        setIsConnected(false);
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setIsConnected(false);
+      };
+
+      return () => {
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+          socket.close();
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
       setIsConnected(false);
-    };
-
-    socket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
-    };
-
-    return () => {
-      socket.close();
-    };
+    }
   }, []);
 
   return {

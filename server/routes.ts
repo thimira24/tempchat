@@ -27,11 +27,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // WebSocket server setup on /ws path to avoid conflicts with Vite HMR
   const wss = new WebSocketServer({ 
     server: httpServer, 
-    path: '/ws',
-    verifyClient: (info) => {
-      console.log('WebSocket connection attempt from:', info.origin, info.req.url);
-      return true; // Allow all connections for now
-    }
+    path: '/ws'
+  });
+
+  wss.on('headers', (headers, request) => {
+    console.log('WebSocket headers being sent:', headers);
   });
 
   console.log('WebSocket server initialized on path /ws');
