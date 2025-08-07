@@ -423,48 +423,50 @@ export default function Chat() {
                   </Badge>
                 </div>
               ) : msg.isOwn ? (
-                <>
-                  <div className="flex-1"></div>
-                  <div className="flex flex-col items-end max-w-xs">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-muted-foreground">
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                      <span className="text-sm font-medium text-foreground">You</span>
+                <div className="w-full flex justify-end">
+                  <div className="flex items-end gap-2 max-w-xs">
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-muted-foreground">
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="text-sm font-medium text-foreground">You</span>
+                      </div>
+                      <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
+                        <p>{msg.content}</p>
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-xs opacity-70">✓</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-md px-4 py-3 shadow-sm">
-                      <p>{msg.content}</p>
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-xs opacity-70">✓</span>
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary-foreground text-sm font-medium">
+                        {nickname.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full flex justify-start">
+                  <div className="flex items-end gap-2 max-w-xs">
+                    <div className={`w-8 h-8 ${getAvatarColor(msg.senderNickname)} rounded-full flex items-center justify-center flex-shrink-0`}>
+                      <span className="text-white text-sm font-medium">
+                        {msg.senderNickname.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-medium text-foreground">{msg.senderNickname}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <div className="bg-card border border-border text-card-foreground rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
+                        <p>{msg.content}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-foreground text-sm font-medium">
-                      {nickname.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className={`w-8 h-8 ${getAvatarColor(msg.senderNickname)} rounded-full flex items-center justify-center flex-shrink-0`}>
-                    <span className="text-white text-sm font-medium">
-                      {msg.senderNickname.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex flex-col max-w-xs">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-foreground">{msg.senderNickname}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <div className="bg-card border border-border text-card-foreground rounded-2xl rounded-tl-md px-4 py-3 shadow-sm">
-                      <p>{msg.content}</p>
-                    </div>
-                  </div>
-                  <div className="flex-1"></div>
-                </>
+                </div>
               )}
             </div>
           ))}
