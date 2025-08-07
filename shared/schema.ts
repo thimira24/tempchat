@@ -46,6 +46,8 @@ export type ClientMessage = {
   senderId?: string;
   timestamp: Date;
   isOwn?: boolean;
+  readBy?: string[];
+  deliveredTo?: string[];
 };
 
 // Room participant type for session management

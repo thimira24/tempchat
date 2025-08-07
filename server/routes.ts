@@ -152,6 +152,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'typing_stop':
             await handleTypingStop(ws, message);
             break;
+          case 'message_read':
+            await handleMessageRead(ws, message);
+            break;
         }
       } catch (error) {
         console.error('WebSocket message error:', error);
@@ -261,13 +264,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store message
       const savedMessage = await storage.addMessage(validatedMessage);
 
-      // Create client message
+      // Create client message with read receipt tracking
       const clientMessage: ClientMessage = {
         id: savedMessage.id,
         content: savedMessage.content,
         senderNickname: savedMessage.senderNickname || 'Anonymous',
         senderId: savedMessage.senderId || undefined,
-        timestamp: savedMessage.timestamp
+        timestamp: savedMessage.timestamp,
+        readBy: [],
+        deliveredTo: []
       };
 
       // Broadcast to all room participants
@@ -369,6 +374,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     socketToRoom.delete(ws);
     socketToUser.delete(ws);
+  }
+
+  async function handleMessageRead(ws: WebSocket, message: WSMessage) {
+    const roomId = socketToRoom.get(ws);
+    const user = socketToUser.get(ws);
+
+    if (!roomId || !user || !message.messageId) {
+      return;
+    }
+
+    // Broadcast read receipt to all room participants
+    const connections = roomConnections.get(roomId);
+    if (connections) {
+      const readResponse: WSResponse = {
+        type: 'message_read',
+        data: {
+          messageId: message.messageId,
+          readerId: user.id,
+          readerNickname: user.nickname
+        }
+      };
+
+      connections.forEach(clientWs => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+          clientWs.send(JSON.stringify(readResponse));
+        }
+      });
+    }
   }
 
   async function broadcastParticipantUpdate(roomId: string) {
