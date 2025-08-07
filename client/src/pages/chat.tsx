@@ -28,6 +28,11 @@ export default function Chat() {
   const [, params] = useRoute("/chat/:roomId");
   const [, setLocation] = useLocation();
   const roomId = params?.roomId;
+  const searchParams = new URLSearchParams(window.location.search);
+  const creatorId = searchParams.get('creatorId') || '';
+  const nickname = searchParams.get('nickname') || '';
+  const currentUserId = Math.random().toString(36).substr(2, 9);
+  const isRoomCreator = Boolean(creatorId && creatorId === currentUserId);
   
   const [message, setMessage] = useState("");
   const [showDestroyModal, setShowDestroyModal] = useState(false);
@@ -81,10 +86,7 @@ export default function Chat() {
     } catch (e) {}
   };
 
-  // Get nickname from URL params
-  const searchParams = new URLSearchParams(window.location.search);
-  const nickname = searchParams.get('nickname') || 'Anonymous';
-  const currentUserId = useRef(Math.random().toString(36).substr(2, 9));
+  const currentUserIdRef = useRef(Math.random().toString(36).substr(2, 9));
 
   // Socket connection
   const { socket, isConnected, safeSend } = useSocket();
@@ -101,7 +103,7 @@ export default function Chat() {
       const data = roomData as { messages: any[] };
       setMessages(data.messages.map((msg: any) => ({
         ...msg,
-        isOwn: msg.senderId === currentUserId.current,
+        isOwn: msg.senderId === currentUserIdRef.current,
         timestamp: new Date(msg.timestamp)
       })));
     }
@@ -122,7 +124,9 @@ export default function Chat() {
   // Destroy room mutation
   const destroyMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("DELETE", `/api/rooms/${roomId}`);
+      const response = await apiRequest("DELETE", `/api/rooms/${roomId}`, {
+        creatorId: creatorId || currentUserIdRef.current
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -132,12 +136,20 @@ export default function Chat() {
       });
       setLocation("/");
     },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to destroy room",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error.message?.includes('403')) {
+        toast({
+          title: "Permission Denied",
+          description: "Only the room creator can destroy this room",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to destroy room",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -152,7 +164,7 @@ export default function Chat() {
         case 'room_joined':
           setMessages(response.data.messages.map((msg: any) => ({
             ...msg,
-            isOwn: msg.senderId === currentUserId.current,
+            isOwn: msg.senderId === currentUserIdRef.current,
             timestamp: new Date(msg.timestamp)
           })));
           break;
@@ -160,7 +172,7 @@ export default function Chat() {
         case 'new_message':
           const newMessage = {
             ...response.data,
-            isOwn: response.data.senderId === currentUserId.current,
+            isOwn: response.data.senderId === currentUserIdRef.current,
             timestamp: new Date(response.data.timestamp),
             readBy: response.data.readBy || []
           };
@@ -391,7 +403,7 @@ export default function Chat() {
             
             <div className="flex-1 min-w-0">
               <h1 className="font-semibold text-foreground truncate">
-                Chat Room
+                {(roomData as any)?.room?.name || "Chat Room"}
               </h1>
               <p className="text-xs text-muted-foreground flex items-center">
                 <Users className="w-3 h-3 mr-1" />
@@ -420,15 +432,17 @@ export default function Chat() {
               <Share2 className="w-5 h-5 text-muted-foreground" />
             </Button>
             
-            {/* Destroy Chat Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="p-2 rounded-lg hover:bg-destructive/10 min-h-[44px] min-w-[44px]"
-              onClick={handleDestroy}
-            >
-              <Trash2 className="w-5 h-5 text-destructive" />
-            </Button>
+            {/* Destroy Chat Button - Only show for room creator */}
+            {isRoomCreator && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-2 rounded-lg hover:bg-destructive/10 min-h-[44px] min-w-[44px]"
+                onClick={handleDestroy}
+              >
+                <Trash2 className="w-5 h-5 text-destructive" />
+              </Button>
+            )}
           </div>
         </div>
       </header>

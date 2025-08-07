@@ -9,20 +9,35 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MessageCircle, Plus, LogIn, Check } from "lucide-react";
 import NicknameModal from "@/components/nickname-modal";
+import PasswordModal from "@/components/password-modal";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [roomId, setRoomId] = useState("");
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingRoomId, setPendingRoomId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const [createPassword, setCreatePassword] = useState("");
+  const [currentUserId] = useState(() => Math.random().toString(36).substr(2, 9));
+
   const createRoomMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/rooms");
+      if (!createPassword.trim()) {
+        throw new Error("Password is required");
+      }
+      const response = await apiRequest("POST", "/api/rooms", {
+        password: createPassword.trim(),
+        creatorId: currentUserId
+      });
       return response.json();
     },
     onSuccess: (data) => {
+      toast({
+        title: "Room Created",
+        description: `Room "${data.roomName}" created successfully!`,
+      });
       setPendingRoomId(data.roomId);
       setShowNicknameModal(true);
     },
@@ -36,8 +51,58 @@ export default function Home() {
   });
 
   const handleCreateRoom = () => {
+    if (!createPassword.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a password for the room",
+        variant: "destructive",
+      });
+      return;
+    }
     createRoomMutation.mutate();
   };
+
+  const joinRoomMutation = useMutation({
+    mutationFn: async ({ roomId, password, nickname }: { roomId: string, password: string, nickname: string }) => {
+      const response = await apiRequest("POST", `/api/rooms/${roomId}/join`, {
+        password,
+        nickname
+      });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Joined Successfully",
+        description: `Welcome to ${data.roomName}!`,
+      });
+      const params = new URLSearchParams();
+      if (variables.nickname) {
+        params.set('nickname', variables.nickname);
+      }
+      setLocation(`/chat/${variables.roomId}?${params.toString()}`);
+    },
+    onError: (error: any) => {
+      if (error.message.includes('401')) {
+        toast({
+          title: "Incorrect Password",
+          description: "The password you entered is incorrect. Please try again.",
+          variant: "destructive",
+        });
+      } else if (error.message.includes('404')) {
+        toast({
+          title: "Room Not Found",
+          description: "The room code you entered doesn't exist or has expired.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to join the room. Please try again.",
+          variant: "destructive",
+        });
+      }
+    },
+  });
 
   const handleJoinRoom = () => {
     if (!roomId.trim()) {
@@ -50,16 +115,39 @@ export default function Home() {
     }
     
     setPendingRoomId(roomId.toUpperCase().trim());
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSubmit = (password: string) => {
+    setShowPasswordModal(false);
+    setPendingRoomId(null);
     setShowNicknameModal(true);
+    // Store password for later use
+    sessionStorage.setItem('roomPassword', password);
   };
 
   const handleNicknameConfirmed = (nickname?: string) => {
     if (pendingRoomId) {
-      const params = new URLSearchParams();
-      if (nickname) {
-        params.set('nickname', nickname);
+      const storedPassword = sessionStorage.getItem('roomPassword');
+      if (storedPassword && nickname) {
+        // Join existing room with password
+        joinRoomMutation.mutate({
+          roomId: pendingRoomId,
+          password: storedPassword,
+          nickname
+        });
+        sessionStorage.removeItem('roomPassword');
+      } else {
+        // Created new room, just navigate
+        const params = new URLSearchParams();
+        if (nickname) {
+          params.set('nickname', nickname);
+        }
+        if (currentUserId) {
+          params.set('creatorId', currentUserId);
+        }
+        setLocation(`/chat/${pendingRoomId}?${params.toString()}`);
       }
-      setLocation(`/chat/${pendingRoomId}?${params.toString()}`);
     }
     setShowNicknameModal(false);
     setPendingRoomId(null);
@@ -117,38 +205,51 @@ export default function Home() {
             </Badge>
           </div>
 
-          {/* Start Chat Button */}
-          <Button 
-            onClick={handleCreateRoom}
-            disabled={createRoomMutation.isPending}
-            className="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white font-semibold py-4 px-6 rounded-xl min-h-[44px] mb-4 shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            {createRoomMutation.isPending ? "Creating..." : "Start New Chat"}
-          </Button>
-
-          {/* Join Room Input */}
-          <Card className="bg-card rounded-xl shadow-sm border border-border">
+          {/* Create Room Section */}
+          <Card className="mb-6 shadow-lg">
             <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Join Existing Chat</h3>
-              <div className="flex gap-2">
-                <Input 
-                  type="text" 
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  placeholder="Enter room code..."
-                  className="flex-1 px-4 py-3 border border-border bg-input text-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleJoinRoom();
-                    }
-                  }}
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Create New Room</h3>
+              <div className="space-y-3">
+                <Input
+                  type="password"
+                  placeholder="Enter room password"
+                  value={createPassword}
+                  onChange={(e) => setCreatePassword(e.target.value)}
+                  className="min-h-[44px]"
                 />
                 <Button 
-                  onClick={handleJoinRoom}
-                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-4 rounded-lg min-h-[44px]"
+                  onClick={handleCreateRoom}
+                  disabled={createRoomMutation.isPending}
+                  className="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white font-semibold py-4 px-6 rounded-xl min-h-[44px] shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5"
                 >
-                  <LogIn className="w-5 h-5" />
+                  <Plus className="w-5 h-5 mr-2" />
+                  {createRoomMutation.isPending ? "Creating..." : "Create Room"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Join Room Section */}
+          <Card className="shadow-lg">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Join Existing Room</h3>
+              <div className="space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Enter room code (e.g. ABC123)"
+                  value={roomId}
+                  onChange={(e) => setRoomId(e.target.value.toUpperCase())}
+                  className="text-center text-lg font-mono tracking-wider min-h-[44px]"
+                  maxLength={8}
+                />
+                
+                <Button 
+                  onClick={handleJoinRoom}
+                  variant="outline"
+                  className="w-full min-h-[44px] font-semibold"
+                >
+                  <LogIn className="w-5 h-5 mr-2" />
+                  Join Room
                 </Button>
               </div>
             </CardContent>
@@ -165,12 +266,24 @@ export default function Home() {
         </div>
       </footer>
 
+      <PasswordModal
+        isOpen={showPasswordModal}
+        roomId={pendingRoomId || ""}
+        onPasswordSubmit={handlePasswordSubmit}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setPendingRoomId(null);
+        }}
+        isValidating={joinRoomMutation.isPending}
+      />
+
       <NicknameModal
         isOpen={showNicknameModal}
         onConfirm={handleNicknameConfirmed}
         onClose={() => {
           setShowNicknameModal(false);
           setPendingRoomId(null);
+          sessionStorage.removeItem('roomPassword');
         }}
       />
     </div>

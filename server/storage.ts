@@ -54,6 +54,11 @@ export class MemStorage implements IStorage {
     return this.rooms.get(id);
   }
 
+  async validateRoomPassword(roomId: string, password: string): Promise<boolean> {
+    const room = this.rooms.get(roomId);
+    return room ? room.password === password : false;
+  }
+
   async updateRoomActivity(id: string): Promise<void> {
     const room = this.rooms.get(id);
     if (room) {
@@ -134,14 +139,24 @@ export class MemStorage implements IStorage {
   }
 
   private startCleanupJob(): void {
-    // Clean up inactive rooms every 2 minutes
+    console.log('Starting room cleanup job - checking every 5 minutes for rooms inactive > 10 minutes');
     setInterval(async () => {
-      const inactiveRooms = await this.getInactiveRooms(10); // 10 minutes threshold
-      for (const room of inactiveRooms) {
-        console.log(`Cleaning up inactive room: ${room.id}`);
-        await this.deleteRoom(room.id);
+      try {
+        const inactiveRooms = await this.getInactiveRooms(10); // 10 minutes threshold
+        
+        if (inactiveRooms.length > 0) {
+          console.log(`Cleaning up ${inactiveRooms.length} inactive room(s):`);
+          
+          for (const room of inactiveRooms) {
+            console.log(`- Deleting room: ${room.id} "${room.name}" (last active: ${room.lastActivityAt})`);
+            await this.deleteRoom(room.id);
+          }
+          console.log(`Successfully cleaned up ${inactiveRooms.length} expired rooms`);
+        }
+      } catch (error) {
+        console.error('Error during room cleanup:', error);
       }
-    }, 2 * 60 * 1000); // Every 2 minutes
+    }, 5 * 60 * 1000); // Check every 5 minutes
   }
 }
 

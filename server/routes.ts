@@ -52,12 +52,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // API Routes
   
+  // Generate random room name
+  const generateRoomName = () => {
+    const adjectives = ['Cozy', 'Swift', 'Bright', 'Calm', 'Bold', 'Fresh', 'Quick', 'Smart', 'Cool', 'Warm'];
+    const nouns = ['Chat', 'Room', 'Space', 'Hub', 'Zone', 'Lounge', 'Corner', 'Place', 'Spot', 'Area'];
+    const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const number = Math.floor(Math.random() * 1000);
+    return `${adjective} ${noun} ${number}`;
+  };
+
   // Create new chat room
   app.post("/api/rooms", async (req, res) => {
     try {
+      const { password, creatorId } = req.body;
+      
+      if (!password || !creatorId) {
+        return res.status(400).json({ error: "Password and creator ID are required" });
+      }
+
       const roomId = randomUUID().substring(0, 8).toUpperCase();
-      const room = await storage.createRoom({ id: roomId });
-      res.json({ roomId: room.id, created: true });
+      const roomName = generateRoomName();
+      
+      const room = await storage.createRoom({ 
+        id: roomId, 
+        name: roomName,
+        password,
+        creatorId,
+        participantCount: "0"
+      });
+      
+      res.json({ 
+        roomId: room.id, 
+        roomName: room.name,
+        created: true 
+      });
     } catch (error) {
       console.error("Error creating room:", error);
       res.status(500).json({ error: "Failed to create room" });
@@ -97,14 +126,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Destroy room
+  // Join room with password
+  app.post("/api/rooms/:roomId/join", async (req, res) => {
+    try {
+      const { roomId } = req.params;
+      const { password, nickname } = req.body;
+      
+      if (!password || !nickname) {
+        return res.status(400).json({ error: "Password and nickname are required" });
+      }
+
+      const room = await storage.getRoom(roomId);
+      if (!room) {
+        return res.status(404).json({ error: "Room not found" });
+      }
+
+      const isValidPassword = await storage.validateRoomPassword(roomId, password);
+      if (!isValidPassword) {
+        return res.status(401).json({ error: "Incorrect password" });
+      }
+
+      res.json({ 
+        success: true, 
+        roomName: room.name,
+        roomId: room.id
+      });
+    } catch (error) {
+      console.error("Error joining room:", error);
+      res.status(500).json({ error: "Failed to join room" });
+    }
+  });
+
+  // Destroy room (only creator can destroy)
   app.delete("/api/rooms/:roomId", async (req, res) => {
     try {
       const { roomId } = req.params;
+      const { creatorId } = req.body;
       const room = await storage.getRoom(roomId);
       
       if (!room) {
         return res.status(404).json({ error: "Room not found" });
+      }
+
+      // Check if user is the creator
+      if (room.creatorId !== creatorId) {
+        return res.status(403).json({ error: "Only the room creator can destroy the room" });
       }
 
       // Notify all connected clients that room is being destroyed

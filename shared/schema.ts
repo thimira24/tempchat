@@ -6,6 +6,9 @@ import { z } from "zod";
 // Chat rooms table
 export const chatRooms = pgTable("chat_rooms", {
   id: varchar("id").primaryKey(),
+  name: varchar("name").notNull(),
+  password: varchar("password").notNull(),
+  creatorId: varchar("creator_id").notNull(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   lastActivityAt: timestamp("last_activity_at").default(sql`now()`).notNull(),
   participantCount: text("participant_count").default("0").notNull(),
@@ -27,6 +30,12 @@ export const insertChatRoomSchema = createInsertSchema(chatRooms).omit({
   lastActivityAt: true,
 });
 
+export const joinRoomSchema = z.object({
+  roomId: z.string(),
+  password: z.string(),
+  nickname: z.string().min(1).max(50)
+});
+
 export const insertMessageSchema = createInsertSchema(messages).omit({
   id: true,
   timestamp: true,
@@ -35,6 +44,7 @@ export const insertMessageSchema = createInsertSchema(messages).omit({
 // TypeScript types
 export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
 export type ChatRoom = typeof chatRooms.$inferSelect;
+export type JoinRoom = z.infer<typeof joinRoomSchema>;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messages.$inferSelect;
 
