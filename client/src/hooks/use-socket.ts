@@ -9,17 +9,23 @@ export function useSocket() {
     // In development, Vite dev server proxies to the Express server
     // So we should connect to the same host that served the page
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
+
     console.log('Attempting WebSocket connection to:', wsUrl);
     console.log('Current location:', window.location.href);
-    
+
     try {
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
+      // Add a small delay before marking as connected to ensure WebSocket is ready
+      let connectionTimeout: NodeJS.Timeout;
+
       socket.onopen = () => {
         console.log('WebSocket connected successfully');
-        setIsConnected(true);
+        // Add small delay to ensure connection is fully ready
+        connectionTimeout = setTimeout(() => {
+          setIsConnected(true);
+        }, 100);
       };
 
       socket.onclose = (event) => {
@@ -33,8 +39,11 @@ export function useSocket() {
       };
 
       return () => {
-        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
-          socket.close();
+        if (connectionTimeout) {
+          clearTimeout(connectionTimeout);
+        }
+        if (socketRef.current) {
+          socketRef.current.close();
         }
       };
     } catch (error) {
