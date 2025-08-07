@@ -145,5 +145,11 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Export storage instance - using in-memory storage for disposable chat app
+// For now, use in-memory storage until MongoDB is properly configured
+// User can switch to MongoDB by uncommenting the import below and setting MONGODB_URI
+console.log('Storage mode:', process.env.MONGODB_URI ? 'MongoDB' : 'In-Memory');
 export const storage = new MemStorage();
+
+// To use MongoDB, uncomment this line and comment the line above:
+// import { MongoStorage } from './mongo-storage';
+// export const storage = MongoStorage.getInstance();
