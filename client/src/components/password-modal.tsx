@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock } from "lucide-react";
+import { Lock, User } from "lucide-react";
 
 interface PasswordModalProps {
   isOpen: boolean;
   roomId: string;
-  onPasswordSubmit: (password: string) => void;
+  onSubmit: (password: string, nickname: string) => void;
   onClose: () => void;
   isValidating?: boolean;
 }
@@ -16,15 +16,16 @@ interface PasswordModalProps {
 export default function PasswordModal({
   isOpen,
   roomId,
-  onPasswordSubmit,
+  onSubmit,
   onClose,
   isValidating = false
 }: PasswordModalProps) {
   const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
 
   const handleSubmit = () => {
-    if (password.trim()) {
-      onPasswordSubmit(password.trim());
+    if (password.trim() && nickname.trim()) {
+      onSubmit(password.trim(), nickname.trim());
     }
   };
 
@@ -40,28 +41,51 @@ export default function PasswordModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" />
-            Room Password Required
+            Join Chat Room
           </DialogTitle>
+          <DialogDescription>
+            Enter the password and your nickname to join room {roomId}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Enter the password to join room <span className="font-mono font-semibold">{roomId}</span>
-          </p>
           
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Enter room password"
-              className="min-h-[44px]"
-              autoFocus
-              disabled={isValidating}
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="nickname" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Nickname
+              </Label>
+              <Input
+                id="nickname"
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter your nickname"
+                className="min-h-[44px]"
+                autoFocus
+                disabled={isValidating}
+                maxLength={20}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Room Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder="Enter room password"
+                className="min-h-[44px]"
+                disabled={isValidating}
+              />
+            </div>
           </div>
           
           <div className="flex gap-2 justify-end">
@@ -70,10 +94,10 @@ export default function PasswordModal({
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={!password.trim() || isValidating}
+              disabled={!password.trim() || !nickname.trim() || isValidating}
               className="min-w-[80px]"
             >
-              {isValidating ? "Checking..." : "Join"}
+              {isValidating ? "Joining..." : "Join Room"}
             </Button>
           </div>
         </div>

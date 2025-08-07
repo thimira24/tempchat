@@ -118,36 +118,29 @@ export default function Home() {
     setShowPasswordModal(true);
   };
 
-  const handlePasswordSubmit = (password: string) => {
+  const handleJoinSubmit = (password: string, nickname: string) => {
+    if (pendingRoomId) {
+      joinRoomMutation.mutate({
+        roomId: pendingRoomId,
+        password,
+        nickname
+      });
+    }
     setShowPasswordModal(false);
     setPendingRoomId(null);
-    setShowNicknameModal(true);
-    // Store password for later use
-    sessionStorage.setItem('roomPassword', password);
   };
 
   const handleNicknameConfirmed = (nickname?: string) => {
     if (pendingRoomId) {
-      const storedPassword = sessionStorage.getItem('roomPassword');
-      if (storedPassword && nickname) {
-        // Join existing room with password
-        joinRoomMutation.mutate({
-          roomId: pendingRoomId,
-          password: storedPassword,
-          nickname
-        });
-        sessionStorage.removeItem('roomPassword');
-      } else {
-        // Created new room, just navigate
-        const params = new URLSearchParams();
-        if (nickname) {
-          params.set('nickname', nickname);
-        }
-        if (currentUserId) {
-          params.set('creatorId', currentUserId);
-        }
-        setLocation(`/chat/${pendingRoomId}?${params.toString()}`);
+      // Created new room, just navigate
+      const params = new URLSearchParams();
+      if (nickname) {
+        params.set('nickname', nickname);
       }
+      if (currentUserId) {
+        params.set('creatorId', currentUserId);
+      }
+      setLocation(`/chat/${pendingRoomId}?${params.toString()}`);
     }
     setShowNicknameModal(false);
     setPendingRoomId(null);
@@ -269,7 +262,7 @@ export default function Home() {
       <PasswordModal
         isOpen={showPasswordModal}
         roomId={pendingRoomId || ""}
-        onPasswordSubmit={handlePasswordSubmit}
+        onSubmit={handleJoinSubmit}
         onClose={() => {
           setShowPasswordModal(false);
           setPendingRoomId(null);
@@ -283,7 +276,6 @@ export default function Home() {
         onClose={() => {
           setShowNicknameModal(false);
           setPendingRoomId(null);
-          sessionStorage.removeItem('roomPassword');
         }}
       />
     </div>
