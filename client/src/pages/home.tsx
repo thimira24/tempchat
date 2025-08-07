@@ -66,15 +66,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFAFA] font-[Inter]">
+    <div className="min-h-screen flex flex-col bg-background font-[Inter]">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100 px-4 py-3">
+      <header className="bg-card shadow-sm border-b border-border px-4 py-3">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-center">
-            <div className="w-8 h-8 bg-[#1976D2] rounded-lg flex items-center justify-center mr-3">
-              <MessageCircle className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center mr-3">
+              <MessageCircle className="w-5 h-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-semibold text-[#212121]">QuickChat</h1>
+            <h1 className="text-xl font-semibold text-foreground">QuickChat</h1>
           </div>
         </div>
       </header>
@@ -84,19 +84,19 @@ export default function Home() {
         <div className="max-w-md mx-auto text-center">
           {/* Hero Content */}
           <div className="mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#1976D2] to-[#1565C0] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <MessageCircle className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <MessageCircle className="w-10 h-10 text-primary-foreground" />
             </div>
             
-            <h2 className="text-3xl font-bold text-[#212121] mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               Private Instant Chat
             </h2>
             
-            <p className="text-lg text-[#757575] mb-2">
+            <p className="text-lg text-muted-foreground mb-2">
               No signup, no tracking, no storage
             </p>
             
-            <p className="text-sm text-[#757575]">
+            <p className="text-sm text-muted-foreground">
               Create temporary chat rooms that disappear after 10 minutes of inactivity
             </p>
           </div>
@@ -128,16 +128,16 @@ export default function Home() {
           </Button>
 
           {/* Join Room Input */}
-          <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <Card className="bg-card rounded-xl shadow-sm border border-border">
             <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-[#757575] mb-3">Join Existing Chat</h3>
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Join Existing Chat</h3>
               <div className="flex gap-2">
                 <Input 
                   type="text" 
                   value={roomId}
                   onChange={(e) => setRoomId(e.target.value)}
                   placeholder="Enter room code..."
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1976D2] focus:border-transparent text-sm"
+                  className="flex-1 px-4 py-3 border border-border bg-input text-foreground rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent text-sm"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleJoinRoom();
@@ -146,7 +146,7 @@ export default function Home() {
                 />
                 <Button 
                   onClick={handleJoinRoom}
-                  className="bg-[#424242] hover:bg-[#303030] text-white font-medium py-3 px-4 rounded-lg min-h-[44px]"
+                  className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-medium py-3 px-4 rounded-lg min-h-[44px]"
                 >
                   <LogIn className="w-5 h-5" />
                 </Button>
@@ -157,9 +157,9 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="px-4 py-6 border-t border-gray-100 bg-white">
+      <footer className="px-4 py-6 border-t border-border bg-card">
         <div className="max-w-md mx-auto text-center">
-          <p className="text-xs text-[#757575]">
+          <p className="text-xs text-muted-foreground">
             Messages are stored temporarily in memory only • Auto-deleted after 10 minutes of inactivity
           </p>
         </div>

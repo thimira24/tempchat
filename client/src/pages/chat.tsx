@@ -41,6 +41,23 @@ export default function Chat() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Sound functions
+  const playSendSound = () => {
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmHbDTtxve+wYhYVk9nyw3kpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoIj9nyxnkpBSd+zPDajzwIDWWz6NugRAoI');
+      audio.volume = 0.3;
+      audio.play().catch(() => {}); // Ignore errors if sound can't play
+    } catch (e) {}
+  };
+
+  const playReceiveSound = () => {
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRlIJAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YS4JAACqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq');
+      audio.volume = 0.2;
+      audio.play().catch(() => {}); // Ignore errors if sound can't play
+    } catch (e) {}
+  };
 
   // Get nickname from URL params
   const searchParams = new URLSearchParams(window.location.search);
@@ -106,8 +123,8 @@ export default function Chat() {
   useEffect(() => {
     if (!socket || !roomId || !isConnected) return;
 
-    const handleMessage = (data: any) => {
-      const response = JSON.parse(data);
+    const handleMessage = (event: MessageEvent) => {
+      const response = JSON.parse(event.data);
       
       switch (response.type) {
         case 'room_joined':
@@ -125,10 +142,34 @@ export default function Chat() {
             timestamp: new Date(response.data.timestamp)
           };
           setMessages(prev => [...prev, newMessage]);
+          
+          // Play sound for received messages (not own messages)
+          if (!newMessage.isOwn) {
+            playReceiveSound();
+          }
           break;
           
         case 'participant_update':
-          setParticipants(response.data.participants);
+          const prevParticipantCount = participants.length;
+          const newParticipants = response.data.participants;
+          setParticipants(newParticipants);
+          
+          // Show join notification if someone new joined
+          if (newParticipants.length > prevParticipantCount) {
+            const newParticipant = newParticipants[newParticipants.length - 1];
+            if (newParticipant.nickname !== nickname) {
+              // Add system message for join
+              const joinMessage = {
+                id: `system-${Date.now()}`,
+                content: `${newParticipant.nickname} joined the chat`,
+                senderNickname: 'System',
+                timestamp: new Date(),
+                isOwn: false,
+                isSystem: true
+              };
+              setMessages(prev => [...prev, joinMessage]);
+            }
+          }
           break;
           
         case 'typing_update':
@@ -199,6 +240,9 @@ export default function Chat() {
       type: 'send_message',
       message: message.trim()
     }));
+
+    // Play send sound
+    playSendSound();
 
     setMessage("");
     
@@ -276,25 +320,25 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFAFA] font-[Inter]">
+    <div className="min-h-screen flex flex-col bg-background font-[Inter]">
       {/* Chat Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100 px-4 py-3 sticky top-0 z-40">
+      <header className="bg-card shadow-sm border-b border-border px-4 py-3 sticky top-0 z-40">
         <div className="flex items-center justify-between">
           <div className="flex items-center flex-1 min-w-0">
             <Button
               variant="ghost"
               size="sm"
-              className="mr-3 p-2 -ml-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px]"
+              className="mr-3 p-2 -ml-2 rounded-lg hover:bg-muted min-h-[44px] min-w-[44px]"
               onClick={() => setLocation("/")}
             >
-              <ArrowLeft className="w-5 h-5 text-[#757575]" />
+              <ArrowLeft className="w-5 h-5 text-muted-foreground" />
             </Button>
             
             <div className="flex-1 min-w-0">
-              <h1 className="font-semibold text-[#212121] truncate">
+              <h1 className="font-semibold text-foreground truncate">
                 Chat Room
               </h1>
-              <p className="text-xs text-[#757575] flex items-center">
+              <p className="text-xs text-muted-foreground flex items-center">
                 <Users className="w-3 h-3 mr-1" />
                 {participants.length} participants
                 {isConnected && (
@@ -315,20 +359,20 @@ export default function Chat() {
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 rounded-lg hover:bg-gray-100 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-lg hover:bg-muted min-h-[44px] min-w-[44px]"
               onClick={copyRoomLink}
             >
-              <Share2 className="w-5 h-5 text-[#757575]" />
+              <Share2 className="w-5 h-5 text-muted-foreground" />
             </Button>
             
             {/* Destroy Chat Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="p-2 rounded-lg hover:bg-red-50 min-h-[44px] min-w-[44px]"
+              className="p-2 rounded-lg hover:bg-destructive/10 min-h-[44px] min-w-[44px]"
               onClick={handleDestroy}
             >
-              <Trash2 className="w-5 h-5 text-[#F44336]" />
+              <Trash2 className="w-5 h-5 text-destructive" />
             </Button>
           </div>
         </div>
@@ -339,7 +383,7 @@ export default function Chat() {
         <div className="max-w-2xl mx-auto space-y-4">
           {/* System Message */}
           <div className="text-center">
-            <Badge variant="secondary" className="bg-gray-100 text-[#757575]">
+            <Badge variant="secondary" className="bg-muted text-muted-foreground">
               Room created • Code: {roomId}
             </Badge>
           </div>
@@ -350,21 +394,30 @@ export default function Chat() {
               key={msg.id} 
               className={`flex items-start gap-3 ${msg.isOwn ? 'justify-end' : ''} animate-in fade-in slide-in-from-bottom-2 duration-200`}
             >
-              {msg.isOwn ? (
+              {(msg as any).isSystem ? (
+                <div className="flex-1 text-center">
+                  <Badge variant="secondary" className="bg-muted/50 text-muted-foreground text-xs">
+                    {msg.content}
+                  </Badge>
+                </div>
+              ) : msg.isOwn ? (
                 <>
                   <div className="flex-1 min-w-0 flex flex-col items-end">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-[#757575]">
+                      <span className="text-xs text-muted-foreground">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
-                      <span className="text-sm font-medium text-[#212121]">You</span>
+                      <span className="text-sm font-medium text-foreground">You</span>
                     </div>
-                    <div className="bg-gradient-to-r from-[#1976D2] to-[#1565C0] text-white rounded-2xl rounded-tr-md px-4 py-3 max-w-xs shadow-sm">
+                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-md px-4 py-3 max-w-xs shadow-sm">
                       <p>{msg.content}</p>
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className="text-xs opacity-70">✓</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#1976D2] to-[#1565C0] rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground text-sm font-medium">
                       {nickname.charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -378,12 +431,12 @@ export default function Chat() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-[#212121]">{msg.senderNickname}</span>
-                      <span className="text-xs text-[#757575]">
+                      <span className="text-sm font-medium text-foreground">{msg.senderNickname}</span>
+                      <span className="text-xs text-muted-foreground">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <div className="bg-gradient-to-r from-[#F5F5F5] to-[#EEEEEE] text-[#212121] rounded-2xl rounded-tl-md px-4 py-3 max-w-xs shadow-sm">
+                    <div className="bg-card border border-border text-card-foreground rounded-2xl rounded-tl-md px-4 py-3 max-w-xs shadow-sm">
                       <p>{msg.content}</p>
                     </div>
                   </div>
@@ -402,14 +455,14 @@ export default function Chat() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-[#212121]">{typingUsers[0].nickname}</span>
-                  <span className="text-xs text-[#757575]">typing...</span>
+                  <span className="text-sm font-medium text-foreground">{typingUsers[0].nickname}</span>
+                  <span className="text-xs text-muted-foreground">typing...</span>
                 </div>
-                <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
+                <div className="bg-muted rounded-2xl rounded-tl-md px-4 py-3 max-w-xs">
                   <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:0.1s]"></div>
+                    <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:0.2s]"></div>
                   </div>
                 </div>
               </div>
@@ -421,7 +474,7 @@ export default function Chat() {
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-gray-100 bg-white px-4 py-3 sticky bottom-0">
+      <div className="border-t border-border bg-card px-4 py-3 sticky bottom-0">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-end gap-3">
             <div className="flex-1 relative">
@@ -435,14 +488,14 @@ export default function Chat() {
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 rows={1}
-                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-[#1976D2] focus:border-transparent resize-none min-h-[48px] max-h-32"
+                className="w-full px-4 py-3 pr-12 border border-border bg-input text-foreground rounded-2xl focus:ring-2 focus:ring-ring focus:border-transparent resize-none min-h-[48px] max-h-32 placeholder:text-muted-foreground"
               />
               
               {/* Emoji Button (Optional) */}
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-3 bottom-3 p-1 rounded-full hover:bg-gray-100 text-[#757575]"
+                className="absolute right-3 bottom-3 p-1 rounded-full hover:bg-muted text-muted-foreground"
               >
                 <Smile className="w-5 h-5" />
               </Button>
@@ -451,7 +504,7 @@ export default function Chat() {
             <Button
               onClick={handleSendMessage}
               disabled={!message.trim() || !isConnected}
-              className="bg-[#1976D2] hover:bg-[#1565C0] text-white rounded-full p-3 min-h-[48px] min-w-[48px] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-3 min-h-[48px] min-w-[48px] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" />
             </Button>
