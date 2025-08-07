@@ -54,14 +54,23 @@ export default function Chat() {
   const { data: roomData, isLoading } = useQuery({
     queryKey: ['/api/rooms', roomId],
     enabled: !!roomId,
-    onSuccess: (data) => {
+  });
+
+  // Handle room data
+  useEffect(() => {
+    if (roomData && typeof roomData === 'object' && 'messages' in roomData) {
+      const data = roomData as { messages: any[] };
       setMessages(data.messages.map((msg: any) => ({
         ...msg,
         isOwn: msg.senderId === currentUserId.current,
         timestamp: new Date(msg.timestamp)
       })));
-    },
-    onError: () => {
+    }
+  }, [roomData]);
+
+  // Handle error states
+  useEffect(() => {
+    if (roomData === null) {
       toast({
         title: "Error",
         description: "Room not found",
@@ -69,7 +78,7 @@ export default function Chat() {
       });
       setLocation("/");
     }
-  });
+  }, [roomData, toast, setLocation]);
 
   // Destroy room mutation
   const destroyMutation = useMutation({

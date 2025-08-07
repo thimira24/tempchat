@@ -77,8 +77,11 @@ export class MemStorage implements IStorage {
 
   async addMessage(insertMessage: InsertMessage): Promise<Message> {
     const message: Message = {
-      ...insertMessage,
       id: randomUUID(),
+      roomId: insertMessage.roomId,
+      senderId: insertMessage.senderId || null,
+      senderNickname: insertMessage.senderNickname || null,
+      content: insertMessage.content,
       timestamp: new Date()
     };
 

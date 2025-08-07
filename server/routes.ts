@@ -25,7 +25,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
   // WebSocket server setup on /ws path to avoid conflicts with Vite HMR
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws',
+    verifyClient: (info) => {
+      console.log('WebSocket connection attempt from:', info.origin, info.req.url);
+      return true; // Allow all connections for now
+    }
+  });
+
+  console.log('WebSocket server initialized on path /ws');
 
   // Store WebSocket connections by room
   const roomConnections = new Map<string, Map<string, WebSocket>>();
@@ -112,8 +121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket connection handling
-  wss.on('connection', (ws: WebSocket) => {
-    console.log('New WebSocket connection');
+  wss.on('connection', (ws: WebSocket, request) => {
+    console.log('New WebSocket connection from:', request.url, request.headers.origin);
 
     ws.on('message', async (data: Buffer) => {
       try {
@@ -249,7 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: savedMessage.id,
         content: savedMessage.content,
         senderNickname: savedMessage.senderNickname || 'Anonymous',
-        senderId: savedMessage.senderId,
+        senderId: savedMessage.senderId || undefined,
         timestamp: savedMessage.timestamp
       };
 
