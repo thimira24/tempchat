@@ -1,0 +1,36 @@
+I want to build a lightweight, disposable chat application using Replit. The app should be optimized for **mobile-first usage**, with full support for web browsers. No login or user authentication should be required. The focus is on privacy, simplicity, and temporary real-time conversations.
+
+Please generate a full-stack project using **Node.js (Express)** and **Socket.IO** for real-time messaging. The project should be cleanly structured and compatible with Replit's deployment environment.
+
+### Core Features:
+1. **No Sign-In**: Users can start chatting instantly—no accounts, no email, no passwords.
+2. **Start Chat Button**: Generates a new unique room (e.g., `/chat/:roomId`) that can be shared.
+3. **Room Join via URL**: Others can join by accessing the same link.
+4. **Real-Time Messaging**: All messages update instantly using WebSockets.
+5. **Temporary Storage**: Messages are stored in memory (no database). Auto-cleared after 10 minutes of inactivity or on server restart.
+6. **Destroy Chat Button**: Users can end the chat manually, wiping all messages in that room.
+7. **Optional Nickname Entry**: Users can optionally enter a display name before chatting (nickname stored in session memory only).
+8. **Mobile-First UI**: 
+   - Optimized for small screens and touch interfaces.
+   - Responsive layout that adapts cleanly to mobile and tablet.
+   - Modern and clean design using Tailwind CSS or similar.
+9. **Copy Room Link Button**: One-tap sharing for WhatsApp, Messenger, etc.
+10. **Inactivity Timeout**: Entire chat room is deleted if inactive for 10 minutes.
+11. **Replit-Compatible**: Fully deployable on Replit with required CORS, websocket, and server config handled.
+12. **Security & Privacy**:
+   - No persistent storage or analytics.
+   - No third-party trackers.
+   - IPs and device info are not logged or stored.
+
+### Bonus (Optional) Features:
+- Show a QR code for room invite (generated from room URL).
+- Typing indicator ("User is typing...").
+- Allow nickname change during chat.
+- Add smooth enter/exit animations for chat bubbles on mobile.
+
+### Output Requirements:
+- Generate a **folder-structured** project: clear separation of client and server code.
+- Add **comments** in code for clarity.
+- Include basic **instructions** on how to run and test the app on Replit.
+
+Keep the code lightweight, fast, and easy to understand.
