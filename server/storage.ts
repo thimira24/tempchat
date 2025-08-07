@@ -8,12 +8,12 @@ export interface IStorage {
   updateRoomActivity(id: string): Promise<void>;
   deleteRoom(id: string): Promise<void>;
   getInactiveRooms(thresholdMinutes: number): Promise<ChatRoom[]>;
-  
+
   // Message management
   addMessage(message: InsertMessage): Promise<Message>;
   getRoomMessages(roomId: string): Promise<Message[]>;
   deleteRoomMessages(roomId: string): Promise<void>;
-  
+
   // Participant management
   addParticipant(roomId: string, participant: Participant): Promise<void>;
   removeParticipant(roomId: string, socketId: string): Promise<void>;
@@ -30,7 +30,7 @@ export class MemStorage implements IStorage {
     this.rooms = new Map();
     this.messages = new Map();
     this.participants = new Map();
-    
+
     // Start cleanup job for inactive rooms
     this.startCleanupJob();
   }
@@ -42,11 +42,11 @@ export class MemStorage implements IStorage {
       lastActivityAt: new Date(),
       participantCount: "0"
     };
-    
+
     this.rooms.set(room.id, room);
     this.messages.set(room.id, []);
     this.participants.set(room.id, []);
-    
+
     return room;
   }
 
@@ -77,11 +77,8 @@ export class MemStorage implements IStorage {
 
   async addMessage(insertMessage: InsertMessage): Promise<Message> {
     const message: Message = {
+      ...insertMessage,
       id: randomUUID(),
-      roomId: insertMessage.roomId,
-      senderId: insertMessage.senderId || null,
-      senderNickname: insertMessage.senderNickname || null,
-      content: insertMessage.content,
       timestamp: new Date()
     };
 
@@ -109,7 +106,7 @@ export class MemStorage implements IStorage {
     const filtered = participants.filter(p => p.socketId !== participant.socketId);
     filtered.push(participant);
     this.participants.set(roomId, filtered);
-    
+
     await this.updateParticipantCount(roomId);
   }
 
@@ -117,7 +114,7 @@ export class MemStorage implements IStorage {
     const participants = this.participants.get(roomId) || [];
     const filtered = participants.filter(p => p.socketId !== socketId);
     this.participants.set(roomId, filtered);
-    
+
     await this.updateParticipantCount(roomId);
   }
 
@@ -146,4 +143,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Memory storage is available as fallback
+// export const storage = new MemStorage();
