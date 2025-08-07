@@ -42,6 +42,28 @@ export default function Chat() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  // Avatar color generator based on user nickname
+  const getAvatarColor = (nickname: string) => {
+    const colors = [
+      'bg-gradient-to-br from-purple-400 to-purple-600',
+      'bg-gradient-to-br from-blue-400 to-blue-600',
+      'bg-gradient-to-br from-green-400 to-green-600',
+      'bg-gradient-to-br from-red-400 to-red-600',
+      'bg-gradient-to-br from-yellow-400 to-yellow-600',
+      'bg-gradient-to-br from-pink-400 to-pink-600',
+      'bg-gradient-to-br from-indigo-400 to-indigo-600',
+      'bg-gradient-to-br from-orange-400 to-orange-600',
+      'bg-gradient-to-br from-teal-400 to-teal-600',
+      'bg-gradient-to-br from-cyan-400 to-cyan-600'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < nickname.length; i++) {
+      hash = nickname.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+  
   // Sound functions
   const playSendSound = () => {
     try {
@@ -424,7 +446,7 @@ export default function Chat() {
                 </>
               ) : (
                 <>
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className={`w-8 h-8 ${getAvatarColor(msg.senderNickname)} rounded-full flex items-center justify-center flex-shrink-0`}>
                     <span className="text-white text-sm font-medium">
                       {msg.senderNickname.charAt(0).toUpperCase()}
                     </span>
@@ -448,7 +470,7 @@ export default function Chat() {
           {/* Typing Indicator */}
           {typingUsers.length > 0 && (
             <div className="flex items-start gap-3 animate-in fade-in duration-200">
-              <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className={`w-8 h-8 ${getAvatarColor(typingUsers[0].nickname)} rounded-full flex items-center justify-center flex-shrink-0`}>
                 <span className="text-white text-sm font-medium">
                   {typingUsers[0].nickname.charAt(0).toUpperCase()}
                 </span>
