@@ -414,7 +414,7 @@ export default function Chat() {
           {messages.map((msg) => (
             <div 
               key={msg.id} 
-              className={`flex items-start gap-3 ${msg.isOwn ? 'justify-end' : ''} animate-in fade-in slide-in-from-bottom-2 duration-200`}
+              className={`flex items-start gap-3 ${msg.isOwn ? 'justify-end flex-row-reverse' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-200`}
             >
               {(msg as any).isSystem ? (
                 <div className="flex-1 text-center">
@@ -424,6 +424,11 @@ export default function Chat() {
                 </div>
               ) : msg.isOwn ? (
                 <>
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground text-sm font-medium">
+                      {nickname.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                   <div className="flex-1 min-w-0 flex flex-col items-end">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-muted-foreground">
@@ -437,11 +442,6 @@ export default function Chat() {
                         <span className="text-xs opacity-70">✓</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-foreground text-sm font-medium">
-                      {nickname.charAt(0).toUpperCase()}
-                    </span>
                   </div>
                 </>
               ) : (

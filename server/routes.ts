@@ -24,17 +24,25 @@ interface WSResponse {
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   
-  // WebSocket server setup on /ws path to avoid conflicts with Vite HMR
+  // WebSocket server setup - no path restriction, handle upgrade manually
   const wss = new WebSocketServer({ 
-    server: httpServer, 
-    path: '/ws'
+    noServer: true 
   });
 
-  wss.on('headers', (headers, request) => {
-    console.log('WebSocket headers being sent:', headers);
+  // Handle WebSocket upgrade manually
+  httpServer.on('upgrade', (request, socket, head) => {
+    const pathname = request.url;
+    
+    if (pathname === '/ws') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+      });
+    } else {
+      socket.destroy();
+    }
   });
 
-  console.log('WebSocket server initialized on path /ws');
+  console.log('WebSocket server initialized with manual upgrade handling');
 
   // Store WebSocket connections by room
   const roomConnections = new Map<string, Map<string, WebSocket>>();
