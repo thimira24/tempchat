@@ -381,7 +381,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const roomId = socketToRoom.get(ws);
     const user = socketToUser.get(ws);
 
+    console.log('Handling message read:', { roomId, userId: user?.id, messageId: message.messageId });
+
     if (!roomId || !user || !message.messageId) {
+      console.log('Missing data for read receipt:', { roomId: !!roomId, user: !!user, messageId: !!message.messageId });
       return;
     }
 
@@ -397,6 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
+      console.log('Broadcasting read receipt:', readResponse.data);
       connections.forEach(clientWs => {
         if (clientWs.readyState === WebSocket.OPEN) {
           clientWs.send(JSON.stringify(readResponse));

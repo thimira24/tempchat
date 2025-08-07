@@ -170,6 +170,7 @@ export default function Chat() {
           if (!newMessage.isOwn) {
             setTimeout(() => {
               if (socket && safeSend) {
+                console.log('Sending read receipt for message:', newMessage.id);
                 safeSend(JSON.stringify({
                   type: 'message_read',
                   messageId: newMessage.id
@@ -185,11 +186,13 @@ export default function Chat() {
           break;
 
         case 'message_read':
+          console.log('Received read receipt:', response.data);
           if (response.data) {
             setMessages(prev => prev.map(msg => {
               if (msg.id === response.data.messageId) {
                 const readBy = (msg as any).readBy || [];
                 if (!readBy.includes(response.data.readerId)) {
+                  console.log('Updating read status for message:', msg.id);
                   return {
                     ...msg,
                     readBy: [...readBy, response.data.readerId]
